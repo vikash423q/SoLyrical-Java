@@ -1,12 +1,15 @@
 package com.vikash.solyrical;
 
 import android.content.Context;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 
 /**
@@ -17,7 +20,7 @@ import android.view.ViewGroup;
  * Use the {@link PlayerFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class PlayerFragment extends Fragment {
+public class PlayerFragment extends Fragment implements View.OnClickListener {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -26,12 +29,15 @@ public class PlayerFragment extends Fragment {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
+    View view;
+
 
     private OnFragmentInteractionListener mListener;
 
     public PlayerFragment() {
         // Required empty public constructor
     }
+
 
     /**
      * Use this factory method to create a new instance of
@@ -64,7 +70,12 @@ public class PlayerFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_player, container, false);
+        view =inflater.inflate(R.layout.fragment_player, container, false);
+        Button button=view.findViewById(R.id.button);
+        button.setOnClickListener(this);
+
+        return view;
+
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -79,6 +90,23 @@ public class PlayerFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+    }
+
+    @Override
+    public void onClick(View v) {
+        if(v.getId()==R.id.button){
+            Button button=(Button)v.findViewById(R.id.button);
+            if(MainActivity.mediaPlayer.isPlaying()){
+                button.setText(R.string.play);
+                MainActivity.current=MainActivity.mediaPlayer.getCurrentPosition();
+                MainActivity.mediaPlayer.pause();
+            }
+            else{
+                button.setText(R.string.pause);
+                MainActivity.mediaPlayer.seekTo(MainActivity.current);
+                MainActivity.mediaPlayer.start();
+            }
+        }
     }
 
     /**

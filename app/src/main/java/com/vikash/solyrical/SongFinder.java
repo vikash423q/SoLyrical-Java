@@ -20,6 +20,8 @@ public class SongFinder {
 
     public ArrayList<String> find(ArrayList<String> list){
 
+        list.clear();
+        hashMap.clear();
         songs=list;
         File[] files=file.listFiles();
         scanDirectory(files);

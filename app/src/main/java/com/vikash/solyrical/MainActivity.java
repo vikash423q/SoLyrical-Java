@@ -31,6 +31,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 
 import java.net.URI;
@@ -42,8 +43,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     ArrayList<String> arrayList=new ArrayList<String>();
     ArrayAdapter<String> arrayAdapter;
     SQLiteDatabase database;
-    MediaPlayer mediaPlayer=new MediaPlayer();
+    static MediaPlayer mediaPlayer=new MediaPlayer();
     AudioManager audioManager;
+    static int current=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,11 +54,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Fragment fragment=new PlayerFragment();
+        final Fragment fragment=new PlayerFragment();
         FragmentManager fragmentManager=getSupportFragmentManager();
         FragmentTransaction ft=fragmentManager.beginTransaction();
         ft.add(R.id.fragment,fragment);
+        ft.commit();
 
+        database=this.openOrCreateDatabase("Songs",MODE_PRIVATE,null);
+        database.execSQL("CREATE TABLE IF NOT EXISTS songs(title VARCHAR,filepath VARCHAR primary key)");
 
         ListView listView=(ListView)findViewById(R.id.listView);
 
@@ -68,12 +73,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 //Logic on item click.
-                if(mediaPlayer.isPlaying())
+                if(mediaPlayer.isPlaying()) {
                     mediaPlayer.stop();
+                    current = 0;
+                }
                 Uri uri= Uri.parse(SongFinder.hashMap.get(arrayList.get(position)));
                 Log.i("Uri",uri.toString());
                 mediaPlayer=MediaPlayer.create(getApplicationContext(),uri);
-                mediaPlayer.start();
+                fragment.getView().findViewById(R.id.button).callOnClick();
             }
         });
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -90,16 +97,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void getFromStorage(){
 
-        database=this.openOrCreateDatabase("Songs",MODE_PRIVATE,null);
-        database.execSQL("CREATE TABLE IF NOT EXISTS songs(id INTEGER primary key autoincrement,title VARCHAR,filepath VARCHAR)");
         Cursor c=database.rawQuery("SELECT * FROM songs",null);
 
+        int titleIndex=c.getColumnIndex("title");
+        int pathIndex=c.getColumnIndex("filepath");
         if(c.moveToNext()){
             //data exists.
-
+            arrayList.clear();
+            SongFinder.hashMap.clear();
+            Log.i("info","getting from storage");
             do{
+                arrayList.add(c.getString(titleIndex));
+                SongFinder.hashMap.put(c.getString(titleIndex),c.getString(pathIndex));
 
             }while(c.moveToNext());
+            arrayAdapter.notifyDataSetChanged();
         }
         else{
             //data doesn't exists.Create one.
@@ -116,7 +128,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
         SongFinder songFinder=new SongFinder();
         songFinder.find(arrayList);
+        arrayAdapter.notifyDataSetChanged();
         Log.i("song","List being updated");
+        database.execSQL("DELETE FROM songs");
+
+        for(int i=0;i<arrayList.size();i++) {
+            SQLiteStatement statement = database.compileStatement("INSERT INTO songs(title,filepath) VALUES(?,?)");
+            statement.bindString(1, arrayList.get(i));
+            statement.bindString(2, SongFinder.hashMap.get(arrayList.get(i)));
+            statement.execute();
+        }
     }
 
     @Override
@@ -128,9 +149,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    public void mediaControl(){
-
-    }
 
 
     @Override
@@ -160,6 +178,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        }
+        else if(id==R.id.refresh){
+            getFromLocal();
         }
 
         return super.onOptionsItemSelected(item);
@@ -198,11 +219,5 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return null;
         }
 
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            arrayAdapter.notifyDataSetChanged();
-
-        }
     }
 }

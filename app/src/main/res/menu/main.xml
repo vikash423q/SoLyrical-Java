@@ -6,4 +6,8 @@
         android:orderInCategory="100"
         android:title="@string/action_settings"
         app:showAsAction="never" />
+    <item
+        android:title="@string/refresh_library"
+        android:id="@+id/refresh"
+        ></item>
 </menu>
