@@ -1,7 +1,6 @@
 package com.vikash.solyrical;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -12,8 +11,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -33,19 +30,26 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Switch;
+import android.widget.Toast;
 
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
-    ArrayList<String> arrayList=new ArrayList<String>();
+    static ArrayList<String> arrayList=new ArrayList<String>();
     ArrayAdapter<String> arrayAdapter;
     SQLiteDatabase database;
     static MediaPlayer mediaPlayer=new MediaPlayer();
     AudioManager audioManager;
-    static int current=0;
+    static int currentPosition=0,currentIndex=0;
+    boolean shuffleOn=false;
+    Random rand=new Random();
+    Switch aSwitch;
+    ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,16 +58,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        final Fragment fragment=new PlayerFragment();
-        FragmentManager fragmentManager=getSupportFragmentManager();
-        FragmentTransaction ft=fragmentManager.beginTransaction();
-        ft.add(R.id.fragment,fragment);
-        ft.commit();
 
         database=this.openOrCreateDatabase("Songs",MODE_PRIVATE,null);
         database.execSQL("CREATE TABLE IF NOT EXISTS songs(title VARCHAR,filepath VARCHAR primary key)");
 
-        ListView listView=(ListView)findViewById(R.id.listView);
+        listView=(ListView)findViewById(R.id.listView);
+        aSwitch=findViewById(R.id.switch1);
 
         arrayAdapter=new ArrayAdapter<String>(getApplicationContext(),android.R.layout.simple_list_item_1,arrayList);
 
@@ -73,16 +73,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 //Logic on item click.
-                if(mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
-                    current = 0;
-                }
-                Uri uri= Uri.parse(SongFinder.hashMap.get(arrayList.get(position)));
-                Log.i("Uri",uri.toString());
-                mediaPlayer=MediaPlayer.create(getApplicationContext(),uri);
-                fragment.getView().findViewById(R.id.button).callOnClick();
+                play(position);
+                Button button=(Button)findViewById(R.id.play);
+                button.setText(R.string.pause);
             }
         });
+
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                if(currentIndex>=arrayList.size())
+                    currentIndex=0;
+                play(currentIndex);
+            }
+        });
+
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -91,14 +96,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        SongRetriever retriever=new SongRetriever();
-        retriever.execute("");
+        getFromStorage();
     }
 
     public void getFromStorage(){
 
         Cursor c=database.rawQuery("SELECT * FROM songs",null);
-
+        MediaData mediaData=new MediaData();
         int titleIndex=c.getColumnIndex("title");
         int pathIndex=c.getColumnIndex("filepath");
         if(c.moveToNext()){
@@ -110,15 +114,92 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 arrayList.add(c.getString(titleIndex));
                 SongFinder.hashMap.put(c.getString(titleIndex),c.getString(pathIndex));
 
+                String[] str=mediaData.fetchMeta(SongFinder.hashMap.get(c.getString(titleIndex)));
+
+                if(str!=null) {
+                    String temp=str[0] + "   " + str[1] + "   " + str[2];
+                    temp=temp.replaceAll("(\\(?[^ ]+?\\.[^ ]+)", "");
+                    Log.i("metadata", temp);
+
+                }
+
+
             }while(c.moveToNext());
             arrayAdapter.notifyDataSetChanged();
+
         }
         else{
             //data doesn't exists.Create one.
             getFromLocal();
         }
 
+
         return;
+    }
+
+    public void togglePlayState(View view){
+        Button button=(Button)findViewById(R.id.play);
+        try {
+            if (mediaPlayer == null) {
+                mediaPlayer.release();
+                play(currentIndex++);
+                return;
+            }
+            if (mediaPlayer.isPlaying()) {
+                button.setText(R.string.play);
+                currentPosition = mediaPlayer.getCurrentPosition();
+                mediaPlayer.pause();
+            } else {
+                button.setText(R.string.pause);
+                mediaPlayer.seekTo(currentPosition);
+                mediaPlayer.start();
+            }
+        }   catch (Exception e){
+            Toast.makeText(this,"Error with the track",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void playNext(View view){
+       if(aSwitch.isChecked()){
+           //Logic for shuffle.
+           currentIndex=rand.nextInt(arrayList.size());
+       }
+       else{
+           if(currentIndex>=arrayList.size())
+               currentIndex=0;
+       }
+       play(currentIndex);
+    }
+
+    public void playPrev(View view){
+        if(aSwitch.isChecked())
+        {
+            //logic for shuffle.
+            currentIndex=rand.nextInt(arrayList.size());
+        }
+        else
+        {
+            currentIndex-=2;
+            if(currentIndex<0)
+                currentIndex=arrayList.size()-1;
+        }
+        play(currentIndex);
+    }
+
+    public void play(int index){
+        try{
+            if(mediaPlayer!=null&&mediaPlayer.isPlaying())
+                mediaPlayer.release();
+            Uri uri= Uri.parse(SongFinder.hashMap.get(arrayList.get(index)));
+            Log.i("song",uri.toString());
+            mediaPlayer=MediaPlayer.create(this,uri);
+
+            mediaPlayer.start();
+        }   catch(Exception e){
+            Toast.makeText(this,"Couldn't play the track you requested",Toast.LENGTH_SHORT).show();
+
+        }
+        currentIndex=index+1;
     }
 
     public void getFromLocal(){
@@ -211,13 +292,4 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
-    public class SongRetriever extends AsyncTask<String,Void,String>{
-
-        @Override
-        protected String doInBackground(String... strings) {
-            getFromStorage();
-            return null;
-        }
-
-    }
 }
