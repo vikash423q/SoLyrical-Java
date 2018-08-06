@@ -26,7 +26,7 @@ public class SongFinder {
         File[] files=file.listFiles();
         scanDirectory(files);
 
-        return list;
+        return songs;
     }
 
     public void scanDirectory(File[] files){

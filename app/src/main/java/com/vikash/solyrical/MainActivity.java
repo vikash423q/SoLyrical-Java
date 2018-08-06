@@ -12,10 +12,9 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -26,7 +25,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -35,13 +33,9 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
-    static ArrayList<String> arrayList=new ArrayList<String>();
-    ArrayAdapter<String> arrayAdapter;
     SQLiteDatabase database;
     static MediaPlayer mediaPlayer=new MediaPlayer();
     AudioManager audioManager;
@@ -50,6 +44,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     Random rand=new Random();
     Switch aSwitch;
     ListView listView;
+    ViewPager viewPager;
+    StatePageAdapter pageAdapter;
+    Fragment_1 fragment1;
+    Fragment_2 fragment2;
+    Button button;
+    GetLyrics getLyrics;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,31 +58,29 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        button=(Button)findViewById(R.id.play);
+        aSwitch=findViewById(R.id.switch1);
+
+        fragment1=new Fragment_1();
+        fragment2=new Fragment_2();
+        FragmentManager fm=getSupportFragmentManager();
+        pageAdapter=new StatePageAdapter(fm);
+        viewPager=(ViewPager) findViewById(R.id.container);
+
+        pageAdapter.addFragment(fragment1);
+        pageAdapter.addFragment(fragment2);
+        viewPager.setAdapter(pageAdapter);
+        setViewPager(0);
+
 
         database=this.openOrCreateDatabase("Songs",MODE_PRIVATE,null);
         database.execSQL("CREATE TABLE IF NOT EXISTS songs(title VARCHAR,filepath VARCHAR primary key)");
 
-        listView=(ListView)findViewById(R.id.listView);
-        aSwitch=findViewById(R.id.switch1);
-
-        arrayAdapter=new ArrayAdapter<String>(getApplicationContext(),android.R.layout.simple_list_item_1,arrayList);
-
-        listView.setAdapter(arrayAdapter);
-
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //Logic on item click.
-                play(position);
-                Button button=(Button)findViewById(R.id.play);
-                button.setText(R.string.pause);
-            }
-        });
 
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-                if(currentIndex>=arrayList.size())
+                if(currentIndex>=fragment1.arrayList.size())
                     currentIndex=0;
                 play(currentIndex);
             }
@@ -102,30 +100,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void getFromStorage(){
 
         Cursor c=database.rawQuery("SELECT * FROM songs",null);
-        MediaData mediaData=new MediaData();
         int titleIndex=c.getColumnIndex("title");
         int pathIndex=c.getColumnIndex("filepath");
         if(c.moveToNext()){
             //data exists.
-            arrayList.clear();
+            fragment1.arrayList.clear();
             SongFinder.hashMap.clear();
             Log.i("info","getting from storage");
             do{
-                arrayList.add(c.getString(titleIndex));
+                fragment1.arrayList.add(c.getString(titleIndex));
                 SongFinder.hashMap.put(c.getString(titleIndex),c.getString(pathIndex));
 
-                String[] str=mediaData.fetchMeta(SongFinder.hashMap.get(c.getString(titleIndex)));
 
-                if(str!=null) {
-                    String temp=str[0] + "   " + str[1] + "   " + str[2];
-                    temp=temp.replaceAll("(\\(?[^ ]+?\\.[^ ]+)", "");
-                    Log.i("metadata", temp);
-
-                }
 
 
             }while(c.moveToNext());
-            arrayAdapter.notifyDataSetChanged();
 
         }
         else{
@@ -138,7 +127,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     public void togglePlayState(View view){
-        Button button=(Button)findViewById(R.id.play);
         try {
             if (mediaPlayer == null) {
                 mediaPlayer.release();
@@ -149,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 button.setText(R.string.play);
                 currentPosition = mediaPlayer.getCurrentPosition();
                 mediaPlayer.pause();
-            } else {
+            } else if(mediaPlayer!=null) {
                 button.setText(R.string.pause);
                 mediaPlayer.seekTo(currentPosition);
                 mediaPlayer.start();
@@ -162,10 +150,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void playNext(View view){
        if(aSwitch.isChecked()){
            //Logic for shuffle.
-           currentIndex=rand.nextInt(arrayList.size());
+           currentIndex=rand.nextInt(fragment1.arrayList.size());
        }
        else{
-           if(currentIndex>=arrayList.size())
+           if(currentIndex>=fragment1.arrayList.size())
                currentIndex=0;
        }
        play(currentIndex);
@@ -175,13 +163,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if(aSwitch.isChecked())
         {
             //logic for shuffle.
-            currentIndex=rand.nextInt(arrayList.size());
+            currentIndex=rand.nextInt(fragment1.arrayList.size());
         }
         else
         {
             currentIndex-=2;
             if(currentIndex<0)
-                currentIndex=arrayList.size()-1;
+                currentIndex=fragment1.arrayList.size()-1;
         }
         play(currentIndex);
     }
@@ -190,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         try{
             if(mediaPlayer!=null&&mediaPlayer.isPlaying())
                 mediaPlayer.release();
-            Uri uri= Uri.parse(SongFinder.hashMap.get(arrayList.get(index)));
+            Uri uri= Uri.parse(SongFinder.hashMap.get(fragment1.arrayList.get(index)));
             Log.i("song",uri.toString());
             mediaPlayer=MediaPlayer.create(this,uri);
 
@@ -199,26 +187,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             Toast.makeText(this,"Couldn't play the track you requested",Toast.LENGTH_SHORT).show();
 
         }
+        Fragment_1.fetchLyrics(currentIndex);
         currentIndex=index+1;
+        int color,acolor=ColorGenerator.generateRandomColor();
+        findViewById(R.id.toolbar).setBackgroundColor(acolor);
+        Fragment_1.listView.setBackgroundColor(acolor);
+        findViewById(R.id.controlBar).setBackgroundColor(color=ColorGenerator.generateRandomColor());
+        Fragment_2.textView.setBackgroundColor(color);
+
     }
 
     public void getFromLocal(){
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
-            return;
-        }
-        SongFinder songFinder=new SongFinder();
-        songFinder.find(arrayList);
-        arrayAdapter.notifyDataSetChanged();
-        Log.i("song","List being updated");
-        database.execSQL("DELETE FROM songs");
 
-        for(int i=0;i<arrayList.size();i++) {
-            SQLiteStatement statement = database.compileStatement("INSERT INTO songs(title,filepath) VALUES(?,?)");
-            statement.bindString(1, arrayList.get(i));
-            statement.bindString(2, SongFinder.hashMap.get(arrayList.get(i)));
-            statement.execute();
-        }
+        DownloadFromLocal task=new DownloadFromLocal();
+        task.execute();
     }
 
     @Override
@@ -230,6 +212,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
+
+
+    public void setViewPager(int index){
+        viewPager.setCurrentItem(index);
+
+    }
 
 
     @Override
@@ -290,6 +278,48 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    public class DownloadFromLocal extends AsyncTask<String,Void,ArrayList<String>>{
+
+        protected ArrayList<String> doInBackground(String... strings) {
+
+
+            if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+                return null;
+            }
+            ArrayList<String> arrayList=new ArrayList<String>();
+            try {
+                SongFinder songFinder = new SongFinder();
+                arrayList=songFinder.find(arrayList);
+                Log.i("song", "List being updated");
+                database.execSQL("DELETE FROM songs");
+
+                for (int i = 0; i < arrayList.size(); i++) {
+                    SQLiteStatement statement = database.compileStatement("INSERT INTO songs(title,filepath) VALUES(?,?)");
+                    statement.bindString(1, arrayList.get(i));
+                    statement.bindString(2, SongFinder.hashMap.get(arrayList.get(i)));
+                    statement.execute();
+                }
+            }   catch (Exception e){
+                Toast.makeText(MainActivity.this,"Error occured",Toast.LENGTH_SHORT).show();
+            }
+
+            return arrayList;
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<String> list) {
+            super.onPostExecute(list);
+
+            if(list!=null&&!list.isEmpty()){
+                Fragment_1.arrayList.clear();
+                for(String each:list)
+                    Fragment_1.arrayList.add(each);
+            }
+            fragment1.arrayAdapter.notifyDataSetChanged();
+        }
     }
 
 }

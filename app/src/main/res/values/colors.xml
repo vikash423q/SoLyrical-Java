@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimary">#9fa8da</color>
     <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
-    <color name="floatButton">#80cbc4</color>
+    <color name="colorAccent">#417a8c</color>
+    <color name="floatButton">#8095cb</color>
     <color name="toolbar">#4db6ac</color>
     <color name="fragment">#4890c4</color>
+    <color name="transparent">#00ffffff</color>
 </resources>
