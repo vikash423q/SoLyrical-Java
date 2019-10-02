@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.NestedScrollView;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -24,6 +25,7 @@ public class Fragment_2 extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
     static TextView textView;
+    static NestedScrollView scrollView;
     static ArrayList<String> spinnerList;
     static ArrayAdapter<String> adapter;
     Spinner spinner;
@@ -70,7 +72,7 @@ public class Fragment_2 extends Fragment {
                 Log.i("temp",GetLyrics.tempList.get(i));
                 GetLyrics get=new GetLyrics();
                 get.downloadLyrics(GetLyrics.tempList.get(position));
-                textView.setBackgroundColor(ColorGenerator.generateRandomColor());
+
             }
 
             @Override
@@ -81,6 +83,7 @@ public class Fragment_2 extends Fragment {
 
         return view;
     }
+
 
 
 }

@@ -4,7 +4,9 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#417a8c</color>
     <color name="floatButton">#8095cb</color>
-    <color name="toolbar">#4db6ac</color>
+    <color name="toolbar">#409f96</color>
     <color name="fragment">#4890c4</color>
     <color name="transparent">#00ffffff</color>
+    <color name="seekbar">#ffffff</color>
+    <color name="orange">#ff8a65</color>
 </resources>

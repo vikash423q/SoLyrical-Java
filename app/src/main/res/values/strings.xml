@@ -14,4 +14,6 @@
     <string name="play">Play</string>
     <string name="next">Next</string>
     <string name="prev">Prev</string>
+    <string name="autoscrolloff">Turn Off Auto-Scroll</string>
+    <string name="autoscrollon">Turn On Auto-Scroll</string>
 </resources>

@@ -9,9 +9,9 @@
 
 
     <android.support.v4.widget.NestedScrollView
+        android:id="@+id/scrollview"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="1dp"
         android:fillViewport="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -27,8 +27,13 @@
                 android:id="@+id/textView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:gravity="center"
-                android:textAlignment="center"
+                android:background="#b6e1dd"
+                android:gravity="bottom|center"
+                android:paddingBottom="20dp"
+                android:paddingLeft="25dp"
+                android:paddingRight="25dp"
+                android:paddingTop="10dp"
+                android:textAlignment="gravity"
                 android:textSize="17sp" />
         </LinearLayout>
     </android.support.v4.widget.NestedScrollView>

@@ -1,5 +1,8 @@
 package com.vikash.solyrical;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.os.AsyncTask;
 import android.text.LoginFilter;
 import android.text.method.ScrollingMovementMethod;
@@ -13,19 +16,46 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.Buffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class GetLyrics {
     ArrayList<String> matches;
+    boolean find=false;
     static ArrayList<String> tempList=new ArrayList<String>();
     String lyricsUrl,lyrics="";
     String listregex="<a (?:href=\"(.*?)\".*<b>(.*?)</b></a>  by <b>(.*?)</b><br>)+?";
     String lyricsregex="<div>\\n<!-- Usage of azlyrics.com content by any third-party lyrics provider is prohibited by our licensing agreement. Sorry about that. -->\\n((?:(?:.*)?\\n)*?)<\\/div>";
+    String filepath=null;
+    boolean firstTrial=true;
+    public void getLyrics(String file){
+        Cursor c=MainActivity.database.rawQuery("SELECT lyric FROM LYRICS WHERE filepath=?",new String[]{file});
+        filepath=file;
+        if(c.moveToNext()){
 
-    public void getLyrics(String metadata){
+            String temp=c.getString(c.getColumnIndex("lyric"));
+            Log.i("lyrics","Lyrics fetched from database");
+            Fragment_2.textView.setText("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"+temp);
+            find=true;
+        }
         matches=new ArrayList<String>();
         DownloadTask task=new DownloadTask();
+        MediaData mediaData=new MediaData();
+        String metadata="";
+
+        String[] str=mediaData.fetchMeta(file);
+        if(str!=null) {
+            if(firstTrial)
+                metadata=str[0] + "   "+str[2];
+            else {
+                metadata=mediaData.getTitle(file);
+
+            }
+            metadata=metadata.replaceAll("(\\(?[^ ]+?\\.[^ ]+)|\\(.*?\\)|\\d+", "");
+            Log.i("listview",metadata);
+        }
+
         String page,url="https://search.azlyrics.com/search.php?q=";
         try {
             task.execute(url+metadata,listregex,"list");
@@ -37,6 +67,7 @@ public class GetLyrics {
 
     public void extracttList(Matcher matcher){
 
+
         if(matcher.find()) {
             Fragment_2.spinnerList.clear();
             lyricsUrl=matcher.group(1);
@@ -45,17 +76,27 @@ public class GetLyrics {
             do {
                 tempList.add(matcher.group(1));
                 Fragment_2.spinnerList.add(matcher.group(2) + " by " + matcher.group(3));
-                Log.i("listpage", matcher.group(1) + "  " + matcher.group(2) + "  " + matcher.group(3));
             }   while(matcher.find());
-            downloadLyrics(lyricsUrl);
+
+            Fragment_2.adapter.notifyDataSetChanged();
+            if(!find)
+                downloadLyrics(lyricsUrl);
         }
-        else
-            Log.i("listpage","DownloadList error in extractList");
+        else {
+            Log.i("listpage", "DownloadList error in extractList.Trying again with title only.");
+            if(firstTrial) {
+                Fragment_2.textView.setText("Oops..lyrics not found.");
+                firstTrial=false;
+                getLyrics(filepath);
+            }
+
+        }
     }
 
+
     public void downloadLyrics(String url){
-        new DownloadTask().execute(url,lyricsregex,"lyrics");
-        Log.i("dropdown","dropdown clicked");
+        DownloadTask task = new DownloadTask();
+        task.execute(url,lyricsregex,"lyrics");
     }
 
 
@@ -69,10 +110,25 @@ public class GetLyrics {
             lyrics=lyrics.replaceAll("&quot;","\"");
         }
         if(lyrics!=null) {
-            //Log.i("lyrics",lyrics);
+            //store your lyrics here.;
+            saveLocally(lyrics,MainActivity.currentFilePath);
+
         }
         else
             Log.i("lyrics","lyrics can't be set");
+    }
+
+    private void saveLocally(String lyrics,String filepath){
+
+        try {
+            Log.i("lyrics", "Lyrics being saved locally");
+            SQLiteStatement statement = MainActivity.database.compileStatement("INSERT INTO lyrics(lyric,filepath) VALUES(?,?)");
+            statement.bindString(1, lyrics);
+            statement.bindString(2, filepath);
+            statement.execute();
+        }   catch (Exception e){
+            Log.i("lyrics","error in saving locally");
+        }
     }
 
 
@@ -123,11 +179,16 @@ public class GetLyrics {
             if(m!=null)
                 extracttList(m);
             else{
-                Fragment_2.textView.setText(lyrics);
-                Fragment_2.adapter.notifyDataSetChanged();
+                Fragment_2.textView.setText("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"+lyrics);
+
+                if(filepath!=null){
+                    saveLocally(lyrics,filepath);
+                }
+
             }
 
 
         }
     }
+
 }

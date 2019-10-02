@@ -5,6 +5,8 @@ import android.net.Uri;
 import android.util.Log;
 
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MediaData extends MediaMetadataRetriever{
 
@@ -18,6 +20,25 @@ public class MediaData extends MediaMetadataRetriever{
         }
 
         return null ;
+    }
+
+    public String getTitle(String file){
+
+        String[] str=this.fetchMeta(file);
+        if(str==null)
+            return "No Title";
+        String metadata="";
+        try {
+            Matcher matcher = Pattern.compile("(?:[\\w+'] ?)+").matcher(str[0]);
+            if (matcher.find())
+                metadata = matcher.group(0);
+        }   catch (Exception e){
+            e.printStackTrace();
+        }
+
+        if(metadata=="")
+            metadata="No Title";
+        return metadata;
     }
 
 }

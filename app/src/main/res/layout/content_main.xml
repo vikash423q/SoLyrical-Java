@@ -18,67 +18,81 @@
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/controlBar"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="#dd000000"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:background="@color/toolbar"
+        android:elevation="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/guideline2">
 
+        <SeekBar
+            android:id="@+id/SeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:layout_margin="0dp"
+            android:background="@drawable/seekbar_drawable"
+            android:paddingEnd="0dp"
+            android:paddingStart="0dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"></SeekBar>
+
         <Button
             android:id="@+id/prev"
-            android:layout_width="75dp"
-            android:layout_height="wrap_content"
+            android:layout_width="67dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/prevbutton"
             android:onClick="playPrev"
-            android:text="@string/prev"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/play"
-            app:layout_constraintHorizontal_bias="0.85"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
             android:id="@+id/next"
-            android:layout_width="75dp"
-            android:layout_height="wrap_content"
+            android:layout_width="63dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/nextbutton"
             android:onClick="playNext"
-            android:text="@string/next"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.15"
-            app:layout_constraintStart_toEndOf="@+id/play"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
             android:id="@+id/play"
-            android:layout_width="75dp"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="1dp"
+            android:layout_width="58dp"
+            android:layout_height="55dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/playbutton"
             android:onClick="togglePlayState"
-            android:text="Play"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/next"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.538" />
 
-        <Switch
-            android:id="@+id/switch1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/floatButton"
-            android:textColorLink="@color/colorAccent"
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="24dp"
+            android:gravity="left"
+            android:paddingStart="5dp"
+            android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/prev"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
     </android.support.constraint.ConstraintLayout>
 
     <android.support.v4.view.ViewPager
         android:id="@+id/container"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="?android:attr/colorBackground"
         app:layout_constraintBottom_toTopOf="@+id/guideline2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

@@ -6,7 +6,6 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +30,7 @@ public class SongFinder {
 
     public void scanDirectory(File[] files){
         for(File temp:files){
+            temp.
             if(temp.isDirectory()&&!temp.toString().contains("/."))
                 scanDirectory(temp.listFiles());
             else

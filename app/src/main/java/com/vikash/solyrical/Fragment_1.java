@@ -14,6 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Switch;
+import android.widget.ToggleButton;
 
 import java.util.ArrayList;
 
@@ -34,45 +35,17 @@ public class Fragment_1 extends Fragment {
     static ListView listView;
     ArrayAdapter<String> arrayAdapter;
     static ArrayList<String>  arrayList=new ArrayList<String>();
-    static GetLyrics getLyrics;
-    static MediaData mediaData;
+    static ToggleButton aSwitch;
 
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
-    private OnFragmentInteractionListener mListener;
 
     public Fragment_1() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment Fragment_1.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static Fragment_1 newInstance(String param1, String param2) {
-        Fragment_1 fragment = new Fragment_1();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+
     }
 
     @Override
@@ -80,6 +53,10 @@ public class Fragment_1 extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view=inflater.inflate(R.layout.fragment_fragment_1, container, false);
+        aSwitch = view.findViewById(R.id.switch1);
+        aSwitch.setText(null);
+        aSwitch.setTextOn(null);
+        aSwitch.setTextOff(null);
         listView=(ListView)view.findViewById(R.id.listView1);
 
         arrayAdapter=new ArrayAdapter<String>(getContext(),android.R.layout.simple_list_item_1,arrayList);
@@ -90,57 +67,19 @@ public class Fragment_1 extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 //Logic on item click.
-                if(MainActivity.mediaPlayer!=null&&MainActivity.mediaPlayer.isPlaying())
-                    MainActivity.mediaPlayer.stop();
+
                 ((MainActivity)getActivity()).play(position);
-                ((MainActivity)getActivity()).button.setText(R.string.pause);
-                fetchLyrics(position);
+                ((MainActivity)getActivity()).button.setBackground(getResources().getDrawable(R.drawable.pausebutton,null));
+                ;
             }
         });
         return view;
     }
 
     public static  void fetchLyrics(int index){
-        mediaData=new MediaData();
-        getLyrics=new GetLyrics();
 
-        String[] str=mediaData.fetchMeta(SongFinder.hashMap.get(arrayList.get(index)));
+        new GetLyrics().getLyrics(SongFinder.hashMap.get(arrayList.get(index)));
 
-        if(str!=null) {
-            String temp=str[0] + "   "+str[2];
-            temp=temp.replaceAll("(\\(?[^ ]+?\\.[^ ]+)|\\(.*?\\)", "");
-            Log.i("listview",temp);
-            getLyrics.getLyrics(temp);
-        }
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
-
-
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
-
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
-    }
 }
