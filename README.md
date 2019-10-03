@@ -1,4 +1,3 @@
-### Screenshots
 
 <div container align="center" margin="auto">
   <img src="http://vikashgaurav.com/portfolio/img/solyrical1.png" alt="so-lyrical-1-jpg" width="280"/>
